@@ -78,7 +78,7 @@ class LoginViewController: RootViewController, UITextFieldDelegate {
     
     // MARK: - Utils
     @objc func keyboardDidShow(notification: Notification) {
-        if let userInfo = notification.userInfo, let frame = userInfo[UIKeyboardFrameBeginUserInfoKey] as? CGRect {
+        if let userInfo = notification.userInfo, let frame = userInfo[UIResponder.keyboardFrameBeginUserInfoKey] as? CGRect {
             formViewBottomConstraint.constant = frame.size.height - buttonHeight.constant
             performKeyboardAnimation()
         }
