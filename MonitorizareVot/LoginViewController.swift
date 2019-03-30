@@ -7,22 +7,24 @@ import SwiftKeychainWrapper
 class LoginViewController: RootViewController, UITextFieldDelegate {
     
     // MARK: - iVars
-    private var tapGestureRecognizer: UITapGestureRecognizer?
+
     @IBOutlet private weak var phoneNumberTextField: UITextField!
     @IBOutlet private weak var codeTextField: UITextField!
     @IBOutlet private weak var buttonHeight: NSLayoutConstraint!
     @IBOutlet private weak var loadingView: UIView!
     @IBOutlet private weak var formViewBottomConstraint: NSLayoutConstraint!
     @IBOutlet private weak var centerButton: UIButton?
+    @IBOutlet weak var centerButtonBottomConstraint: NSLayoutConstraint!
     @IBOutlet private weak var developerBy: UILabel!
     private var loginAPIRequest: LoginAPIRequest?
     
     // MARK: - Life cycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        performKeyboardAnimation()
         self.loginAPIRequest = LoginAPIRequest(parentView: self)
         layout()
-        setTapGestureRecognizer()
+        view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(LoginViewController.keyboardIsHidden)))
         phoneNumberTextField.placeholder = "TextField_Placeholder_PhoneNumber".localized
         codeTextField.placeholder = "TextField_Placeholder_PINNumber".localized
         centerButton?.setTitle("Button_Authenticate".localized, for: .normal)
@@ -31,8 +33,13 @@ class LoginViewController: RootViewController, UITextFieldDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        NotificationCenter.default.addObserver(self, selector: #selector(LoginViewController.keyboardDidShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(LoginViewController.keyboardDidHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(self.keyboardDidShow(notification:)),
+                                               name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(self.keyboardDidHide(notification:)),
+                                               name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -72,19 +79,22 @@ class LoginViewController: RootViewController, UITextFieldDelegate {
     }
     
     // MARK: - Utils
-    func keyboardDidShow(notification: Notification) {
-        if let userInfo = notification.userInfo, let frame = userInfo[UIKeyboardFrameBeginUserInfoKey] as? CGRect {
-            formViewBottomConstraint.constant = frame.size.height - buttonHeight.constant
-            performKeyboardAnimation()
-        }
+    @objc func keyboardDidShow(notification: Notification) {
+        guard let userInfo = notification.userInfo else {return}
+        guard let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
+        let keyboardFrame = keyboardSize.cgRectValue
+        
+        centerButtonBottomConstraint.constant = keyboardFrame.height
+        performKeyboardAnimation()
+        
     }
     
-    func keyboardDidHide(notification: Notification) {
+    @objc func keyboardDidHide(notification: Notification) {
         keyboardIsHidden()
     }
     
-    func keyboardIsHidden() {
-        formViewBottomConstraint?.constant = 0
+    @objc func keyboardIsHidden() {
+        centerButtonBottomConstraint.constant = 0
         performKeyboardAnimation()
         phoneNumberTextField.resignFirstResponder()
         codeTextField.resignFirstResponder()
@@ -94,12 +104,6 @@ class LoginViewController: RootViewController, UITextFieldDelegate {
         let sectieViewController = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SectieViewController")
         self.navigationController?.setViewControllers([sectieViewController], animated: true)
     
-    }
-    
-    private func setTapGestureRecognizer() {
-        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(LoginViewController.keyboardIsHidden))
-        self.tapGestureRecognizer = tapGestureRecognizer
-        self.view.addGestureRecognizer(tapGestureRecognizer)
     }
 
     private func layout() {

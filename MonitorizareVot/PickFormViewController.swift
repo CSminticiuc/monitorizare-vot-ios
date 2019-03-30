@@ -59,7 +59,7 @@ class PickFormViewController: RootViewController {
     }
     
     @IBAction func topRightButtonPressed(_ sender: UIButton) {
-        if let childs = self.navigationController?.childViewControllers {
+        if let childs = self.navigationController?.children {
             for aChild in childs {
                 if aChild is SectieViewController {
                     let _ = self.navigationController?.popToViewController(aChild, animated: true)
